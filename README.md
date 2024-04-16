@@ -1,2 +1,6 @@
 # Tarea1-2-
 Documentación del algoritmo Berkeley con OpenApi
+Integrantes:
+  ANDRES LEONARDO AMAYA VARGAS
+  SEBASTIAN MAURICIO LOPEZ FLORES
+  DAVID SANTIAGO RIVERA ORJUELA
