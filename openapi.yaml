@@ -1,0 +1,269 @@
+openapi: 3.0.3
+info:
+  title: Algoritmo de Berkeley
+  description: >-
+    El algoritmo de Berkeley para sincronizar los relojes de los sistemas en un
+    entorno distribuido sin un servidor de tiempo centralizado.
+  version: 1.0.0
+servers:
+  - url: https://localhost:10000
+    description: link del servidor maestro(Master)
+
+
+paths:
+  /getTime/{masterTime}:
+    get:
+      tags:
+        - "Node Master"
+      summary: Retorna la diferencia de tiempo entre el nodo Master y los nodos Slave
+      description: El endpoint obtiene la diferencia de tiempo desde los nodos Slave.
+      parameters:
+        - name: masterTime
+          in: path
+          required: true
+          description: El tiempo actual del maestro
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Un JSON con la diferencia de tiempo entre el nodo Master y cada nodo Slave.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  differences:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        slave_node_id:
+                          type: string
+                          description: El identificador del nodo Slave
+                        time_difference:
+                          type: string
+                          description: La diferencia de tiempo entre 
+  /updateTime/{differenceTime}:
+    post:
+      tags:
+        - "Node Master"
+      summary: Actualiza el tiempo del nodo Slave.
+      parameters:
+        - name: differenceTime
+          in: path
+          required: true
+          description: Diferencia de tiempo para actualizar el tiempo del servidor
+          schema:
+            type: number
+            description: La diferencia de tiempo en segundos o en otro formato numérico
+      description: Permite al nodo maestro enviar la diferencia de tiempo calculada para sincronizar el reloj del nodo Slave.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                time_difference:
+                  type: string
+                  description: La diferencia de tiempo calculada por el nodo maestro para sincronizar el reloj del nodo Slave.
+      responses:
+        '200':
+          description: Respuesta exitosa indicando que el tiempo ha sido actualizado correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Tiempo actualizado correctamente"
+        '400':
+          description: Respuesta en caso de una solicitud incorrecta.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Solicitud incorrecta"
+  /addNode/{ip}/{port}:
+    post:
+      tags:
+        - "Node Master"
+      summary: Añadir un nuevo nodo esclavo.
+      description: Permite al nodo maestro recibir la IP y el puerto de un nuevo nodo esclavo para añadirlo al sistema.
+      parameters:
+        - name: ip
+          in: path
+          required: true
+          description: Dirección IP del nodo esclavo
+          schema:
+            type: string
+            format: ipv4
+        - name: port
+          in: path
+          required: true
+          description: Puerto del nodo esclavo
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 65535
+      responses:
+        '200':
+          description: Respuesta exitosa indicando que el nodo esclavo ha sido añadido correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Nodo esclavo añadido correctamente"
+                  master_time:
+                    type: string
+                    description: El tiempo actual del nodo maestro.
+                    example: "2024-04-16T15:30:00Z"
+        '400':
+          description: Respuesta en caso de una solicitud incorrecta o falta de datos requeridos.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Solicitud incorrecta o datos faltantes"
+  /getTimeSlave/{masterTime}:
+    get:
+      tags:
+        - "Node Slave"
+      summary: Devuelve el tiempo actual del nodo esclavo.
+      description: Permite al nodo maestro obtener el tiempo actual del nodo esclavo.
+      parameters:
+        - name: masterTime
+          in: path
+          required: true
+          description: El tiempo actual del maestro
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Respuesta exitosa con el tiempo actual del nodo esclavo.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slave_time:
+                    type: string
+                    description: El tiempo actual del nodo esclavo en formato ISO 8601.
+                    example: "2024-04-16T15:30:00Z"
+  /updateTimeSlave/{diferenceTime}:
+    post:
+      tags:
+        - "Node Slave"
+      summary: Actualiza el tiempo del nodo esclavo.
+      description: Permite al nodo maestro enviar la diferencia de tiempo calculada para sincronizar el reloj del nodo esclavo.
+      parameters:
+        - name: diferenceTime
+          in: path
+          required: true
+          description: Diferencia de tiempo para actualizar el tiempo del nodo esclavo
+          schema:
+            type: number
+            description: La diferencia de tiempo en segundos u otro formato numérico
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                time_difference:
+                  type: string
+                  description: La diferencia de tiempo calculada por el nodo maestro para sincronizar el reloj del nodo esclavo.
+                  example: "PT10S"  # Diferencia de tiempo en formato ISO 8601 (por ejemplo, 10 segundos)
+      responses:
+        '200':
+          description: Respuesta exitosa indicando que el tiempo ha sido actualizado correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Tiempo actualizado correctamente"
+        '400':
+          description: Respuesta en caso de una solicitud incorrecta o falta de datos requeridos.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Solicitud incorrecta o datos faltantes"
+  /registerSlave/{ip}/{port}:
+    post:
+      tags:
+        - "Node Slave"
+      summary: Registro del nodo esclavo por parte del nodo maestro.
+      description: Permite al nodo maestro registrar al nodo esclavo enviándole su dirección IP, puerto y otra información relevante.
+      parameters:
+        - name: ip
+          in: path
+          required: true
+          description: Dirección IP del nodo esclavo
+          schema:
+            type: string
+            description: Dirección IP válida del nodo esclavo
+        - name: port
+          in: path
+          required: true
+          description: Puerto del nodo esclavo
+          schema:
+            type: integer
+            description: Puerto válido para la conexión con el nodo esclavo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                master_ip:
+                  type: string
+                  description: Dirección IP del nodo maestro.
+                  example: "192.168.1.1"
+                master_port:
+                  type: integer
+                  description: Puerto del nodo maestro.
+                  example: 5000
+                # Puedes agregar más campos según sea necesario para configurar el nodo esclavo
+      responses:
+        '200':
+          description: Respuesta exitosa indicando que el nodo esclavo ha sido registrado correctamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Nodo esclavo registrado correctamente"
+        '400':
+          description: Respuesta en caso de una solicitud incorrecta o falta de datos requeridos.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Solicitud incorrecta o datos faltantes"
+   
